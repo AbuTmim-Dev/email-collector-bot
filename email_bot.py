@@ -38,14 +38,17 @@ async def rescan_recent_messages(update: Update, context: ContextTypes.DEFAULT_T
     chat_id = update.effective_chat.id
     emails = load_emails(chat_id)
 
-    async for message in context.bot.get_chat_history(chat_id, limit=100):
+    # ✅ الحل الصحيح: get_chat ثم iter_history
+    chat = await context.bot.get_chat(chat_id)
+    async for message in chat.iter_history(limit=100):
         if message.text:
             found = re.findall(EMAIL_REGEX, message.text)
             emails.update(found)
 
     save_emails(chat_id, emails)
-    await update.message.reply_text(f"🔁 Rescanned last 100 messages.\nTotal collected emails: {len(emails)}")
-
+    await update.message.reply_text(
+        f"🔁 Rescanned last 100 messages.\nTotal collected emails: {len(emails)}"
+    )
 
 # ✅ message handler: detects emails
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -108,19 +111,18 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         parse_mode="Markdown"
     )
 
-# ✅ set bot command menu for Telegram interface
+# ✅ set bot command menu (بدون rescan)
 async def set_bot_commands(application):
     await application.bot.set_my_commands([
         BotCommand("start", "Start using the bot"),
         BotCommand("get_emails", "Show collected emails")
-        # لا نضيف rescan هنا لكي لا يظهر في قائمة الأوامر
     ])
 
 # ✅ initialize and run the bot
 app = ApplicationBuilder().token(TOKEN).build()
 app.add_handler(CommandHandler("start", start_command))
 app.add_handler(CommandHandler("get_emails", get_all_emails))
-app.add_handler(CommandHandler("rescan", rescan_recent_messages))
+app.add_handler(CommandHandler("rescan", rescan_recent_messages))  # متاح لكن لا يظهر في القائمة
 app.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), handle_message))
 app.add_handler(CallbackQueryHandler(handle_buttons))
 app.add_handler(ChatMemberHandler(welcome_new_member, ChatMemberHandler.CHAT_MEMBER))
