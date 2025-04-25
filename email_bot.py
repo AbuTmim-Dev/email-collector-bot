@@ -1,4 +1,7 @@
 import re
+import asyncio
+import nest_asyncio
+
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, BotCommand
 from telegram.ext import (
     ApplicationBuilder,
@@ -11,7 +14,6 @@ from telegram.ext import (
 )
 
 TOKEN = "7842485646:AAEzm465ifBkvfbFX746_TluX4cOoN4ES_0"
-
 EMAIL_REGEX = r'[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+'
 
 def load_emails(chat_id):
@@ -107,14 +109,6 @@ async def main():
     await app.run_polling()
 
 # ✅ final setup for Render/asyncio compatibility
-import asyncio
-
 if __name__ == "__main__":
-    try:
-        loop = asyncio.get_event_loop()
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-
-    loop.create_task(main())
-    loop.run_forever()
+    nest_asyncio.apply()
+    asyncio.run(main())
