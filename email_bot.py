@@ -102,11 +102,19 @@ app.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), handle_message
 app.add_handler(CallbackQueryHandler(handle_buttons))
 app.add_handler(ChatMemberHandler(welcome_new_member, ChatMemberHandler.CHAT_MEMBER))
 
-# run polling and setup commands
 async def main():
     await set_bot_commands(app)
     await app.run_polling()
 
+# ✅ final setup for Render/asyncio compatibility
+import asyncio
+
 if __name__ == "__main__":
-    import asyncio
-    asyncio.run(main())
+    try:
+        loop = asyncio.get_event_loop()
+    except RuntimeError:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+
+    loop.create_task(main())
+    loop.run_forever()
