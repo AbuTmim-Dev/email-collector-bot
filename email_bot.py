@@ -38,7 +38,8 @@ async def rescan_recent_messages(update: Update, context: ContextTypes.DEFAULT_T
     chat_id = update.effective_chat.id
     emails = load_emails(chat_id)
 
-    async for message in await context.bot.get_chat(chat_id).get_history(limit=100):
+ chat = await context.bot.get_chat(chat_id)  # ✅ مهم: استخدم await
+    async for message in chat.get_history(limit=100):
         if message.text:
             found = re.findall(EMAIL_REGEX, message.text)
             emails.update(found)
