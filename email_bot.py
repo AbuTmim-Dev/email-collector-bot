@@ -17,7 +17,9 @@ from telegram.ext import (
     filters,
 )
 
-TOKEN = "7842485646:AAEb7dglPU9CZtHTHEHXXGAhjNvMLbvszr8"
+import os
+TOKEN = os.getenv("TOKEN")
+
 EMAIL_REGEX = r'[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+'
 
 def load_emails(chat_id):
