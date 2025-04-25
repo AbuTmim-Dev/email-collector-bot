@@ -1,5 +1,6 @@
 import datetime
 print(f"🚀 Bot started at: {datetime.datetime.now()}")
+print("✅ Email Bot launched.")
 
 import re
 import asyncio
