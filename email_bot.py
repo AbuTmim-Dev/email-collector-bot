@@ -56,7 +56,7 @@ async def get_all_emails(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         await update.message.reply_text("No emails found yet.")
 
-# ✅ inline button handler
+# ✅ inline button handler: sends emails privately and notifies in group
 async def handle_buttons(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
@@ -64,7 +64,11 @@ async def handle_buttons(update: Update, context: ContextTypes.DEFAULT_TYPE):
     emails = load_emails(chat_id)
     if emails:
         email_list = ", ".join(sorted(emails))
-        await query.from_user.send_message(f"Here are the emails:\n{email_list}")
+        try:
+            await query.from_user.send_message(email_list)
+            await query.message.reply_text("📩 Emails have been sent to your private chat.")
+        except:
+            await query.message.reply_text("⚠️ Failed to send emails privately. Please allow private messages from this bot.")
     else:
         await query.from_user.send_message("No emails found yet.")
 
@@ -94,7 +98,7 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         parse_mode="Markdown"
     )
 
-# ✅ set bot command menu (بدون rescan)
+# ✅ set bot command menu
 async def set_bot_commands(application):
     await application.bot.set_my_commands([
         BotCommand("start", "Start using the bot"),
