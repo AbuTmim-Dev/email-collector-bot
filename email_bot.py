@@ -33,23 +33,6 @@ def save_emails(chat_id, emails):
     with open(f"emails_{chat_id}.txt", "w") as f:
         f.write(", ".join(sorted(emails)))
 
-# ✅ /rescan command
-async def rescan_recent_messages(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    chat_id = update.effective_chat.id
-    emails = load_emails(chat_id)
-
-    # ✅ الحل الصحيح: get_chat ثم iter_history
-    chat = await context.bot.get_chat(chat_id)
-    async for message in chat.iter_history(limit=100):
-        if message.text:
-            found = re.findall(EMAIL_REGEX, message.text)
-            emails.update(found)
-
-    save_emails(chat_id, emails)
-    await update.message.reply_text(
-        f"🔁 Rescanned last 100 messages.\nTotal collected emails: {len(emails)}"
-    )
-
 # ✅ message handler: detects emails
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.message and update.message.text:
@@ -122,7 +105,6 @@ async def set_bot_commands(application):
 app = ApplicationBuilder().token(TOKEN).build()
 app.add_handler(CommandHandler("start", start_command))
 app.add_handler(CommandHandler("get_emails", get_all_emails))
-app.add_handler(CommandHandler("rescan", rescan_recent_messages))  # متاح لكن لا يظهر في القائمة
 app.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), handle_message))
 app.add_handler(CallbackQueryHandler(handle_buttons))
 app.add_handler(ChatMemberHandler(welcome_new_member, ChatMemberHandler.CHAT_MEMBER))
