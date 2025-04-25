@@ -33,12 +33,12 @@ def save_emails(chat_id, emails):
     with open(f"emails_{chat_id}.txt", "w") as f:
         f.write(", ".join(sorted(emails)))
 
-# ✅ /rescan command (متاح فقط يدويًا)
+# ✅ /rescan command
 async def rescan_recent_messages(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_chat.id
     emails = load_emails(chat_id)
 
- chat = await context.bot.get_chat(chat_id)  # ✅ مهم: استخدم await
+    chat = await context.bot.get_chat(chat_id)
     async for message in chat.get_history(limit=100):
         if message.text:
             found = re.findall(EMAIL_REGEX, message.text)
@@ -104,16 +104,16 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "👋 Welcome!\n\n"
         "This bot collects all email addresses shared in the group.\n"
         "To view the list of emails collected so far, use the command:\n"
-        "`/get_emails`\n",
+        "`/get_emails`",
         parse_mode="Markdown"
     )
 
-# ✅ set bot command menu for Telegram interface (بدون rescan)
+# ✅ set bot command menu for Telegram interface
 async def set_bot_commands(application):
     await application.bot.set_my_commands([
         BotCommand("start", "Start using the bot"),
         BotCommand("get_emails", "Show collected emails")
-        # لا تضف rescan هنا
+        # لا نضيف rescan هنا لكي لا يظهر في قائمة الأوامر
     ])
 
 # ✅ initialize and run the bot
@@ -129,7 +129,7 @@ async def main():
     await set_bot_commands(app)
     await app.run_polling()
 
-# ✅ final setup for Railway/Render
+# ✅ final setup
 if __name__ == "__main__":
     nest_asyncio.apply()
     asyncio.run(main())
