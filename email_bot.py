@@ -1,5 +1,5 @@
 import re
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, BotCommand
 from telegram.ext import (
     ApplicationBuilder,
     MessageHandler,
@@ -25,6 +25,7 @@ def save_emails(chat_id, emails):
     with open(f"emails_{chat_id}.txt", "w") as f:
         f.write(", ".join(sorted(emails)))
 
+# ✅ message handler: detects emails
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.message and update.message.text:
         chat_id = update.message.chat_id
@@ -35,6 +36,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             emails.update(found)
             save_emails(chat_id, emails)
 
+# ✅ /get_emails command
 async def get_all_emails(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.message.chat_id
     emails = load_emails(chat_id)
@@ -46,6 +48,7 @@ async def get_all_emails(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         await update.message.reply_text("No emails found yet.")
 
+# ✅ inline button handler
 async def handle_buttons(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
@@ -57,6 +60,7 @@ async def handle_buttons(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         await query.from_user.send_message("No emails found yet.")
 
+# ✅ welcome new member handler
 async def welcome_new_member(update: Update, context: ContextTypes.DEFAULT_TYPE):
     status_change = update.chat_member.difference().get("status")
     if status_change == "member":
@@ -66,15 +70,43 @@ async def welcome_new_member(update: Update, context: ContextTypes.DEFAULT_TYPE)
             text=(
                 f"Welcome {name}!\n\n"
                 "Please share your email address in this group.\n"
-                "To get the full list of collected emails, send the command:\n"
+                "To get the full list of collected emails, send:\n"
                 "`/get_emails`"
             ),
             parse_mode="Markdown"
         )
 
+# ✅ /start command
+async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text(
+        "👋 Welcome!\n\n"
+        "This bot collects all email addresses shared in the group.\n"
+        "To view the list of emails collected so far, use the command:\n"
+        "`/get_emails`\n\n"
+        "You'll also see a 'Copy Emails' button when you do!",
+        parse_mode="Markdown"
+    )
+
+# ✅ set bot command menu for Telegram interface
+async def set_bot_commands(application):
+    await application.bot.set_my_commands([
+        BotCommand("start", "Start using the bot"),
+        BotCommand("get_emails", "Show collected emails")
+    ])
+
+# ✅ initialize and run the bot
 app = ApplicationBuilder().token(TOKEN).build()
-app.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), handle_message))
+app.add_handler(CommandHandler("start", start_command))
 app.add_handler(CommandHandler("get_emails", get_all_emails))
+app.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), handle_message))
 app.add_handler(CallbackQueryHandler(handle_buttons))
 app.add_handler(ChatMemberHandler(welcome_new_member, ChatMemberHandler.CHAT_MEMBER))
-app.run_polling()
+
+# run polling and setup commands
+async def main():
+    await set_bot_commands(app)
+    await app.run_polling()
+
+if __name__ == "__main__":
+    import asyncio
+    asyncio.run(main())
