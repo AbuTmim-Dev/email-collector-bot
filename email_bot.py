@@ -1,3 +1,6 @@
+import datetime
+print(f"🚀 Bot started at: {datetime.datetime.now()}")
+
 import re
 import asyncio
 import nest_asyncio
