@@ -5,6 +5,7 @@ print("✅ Email Bot launched.")
 import re
 import asyncio
 import nest_asyncio
+import os
 
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, BotCommand
 from telegram.ext import (
@@ -17,9 +18,7 @@ from telegram.ext import (
     filters,
 )
 
-import os
 TOKEN = os.getenv("BOT_TOKEN")
-
 
 EMAIL_REGEX = r'[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+'
 
@@ -33,6 +32,19 @@ def load_emails(chat_id):
 def save_emails(chat_id, emails):
     with open(f"emails_{chat_id}.txt", "w") as f:
         f.write(", ".join(sorted(emails)))
+
+# ✅ /rescan command
+async def rescan_recent_messages(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    chat_id = update.effective_chat.id
+    emails = load_emails(chat_id)
+
+    async for message in context.bot.get_chat(chat_id).iter_history(limit=100):
+        if message.text:
+            found = re.findall(EMAIL_REGEX, message.text)
+            emails.update(found)
+
+    save_emails(chat_id, emails)
+    await update.message.reply_text(f"🔁 Rescanned last 100 messages.\nTotal collected emails: {len(emails)}")
 
 # ✅ message handler: detects emails
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -91,8 +103,9 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "👋 Welcome!\n\n"
         "This bot collects all email addresses shared in the group.\n"
         "To view the list of emails collected so far, use the command:\n"
-        "`/get_emails`\n\n"
-        "You'll also see a 'Copy Emails' button when you do!",
+        "`/get_emails`\n"
+        "To rescan recent messages and re-collect emails, use:\n"
+        "`/rescan`",
         parse_mode="Markdown"
     )
 
@@ -100,13 +113,15 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def set_bot_commands(application):
     await application.bot.set_my_commands([
         BotCommand("start", "Start using the bot"),
-        BotCommand("get_emails", "Show collected emails")
+        BotCommand("get_emails", "Show collected emails"),
+        BotCommand("rescan", "Rescan last 100 messages")
     ])
 
 # ✅ initialize and run the bot
 app = ApplicationBuilder().token(TOKEN).build()
 app.add_handler(CommandHandler("start", start_command))
 app.add_handler(CommandHandler("get_emails", get_all_emails))
+app.add_handler(CommandHandler("rescan", rescan_recent_messages))
 app.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), handle_message))
 app.add_handler(CallbackQueryHandler(handle_buttons))
 app.add_handler(ChatMemberHandler(welcome_new_member, ChatMemberHandler.CHAT_MEMBER))
@@ -115,7 +130,7 @@ async def main():
     await set_bot_commands(app)
     await app.run_polling()
 
-# ✅ final setup for Render/asyncio compatibility
+# ✅ final setup for Railway/Render
 if __name__ == "__main__":
     nest_asyncio.apply()
     asyncio.run(main())
