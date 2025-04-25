@@ -1,7 +1,0 @@
-services:
-  - type: web
-    name: email-collector-bot
-    env: python
-    buildCommand: "pip install -r requirements.txt"
-    startCommand: "python email_bot.py"
-    plan: free
