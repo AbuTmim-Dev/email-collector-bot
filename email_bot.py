@@ -33,12 +33,12 @@ def save_emails(chat_id, emails):
     with open(f"emails_{chat_id}.txt", "w") as f:
         f.write(", ".join(sorted(emails)))
 
-# ✅ /rescan command
+# ✅ /rescan command (متاح فقط يدويًا)
 async def rescan_recent_messages(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_chat.id
     emails = load_emails(chat_id)
 
-    async for message in context.bot.get_chat(chat_id).iter_history(limit=100):
+    async for message in await context.bot.get_chat(chat_id).get_history(limit=100):
         if message.text:
             found = re.findall(EMAIL_REGEX, message.text)
             emails.update(found)
@@ -103,18 +103,16 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "👋 Welcome!\n\n"
         "This bot collects all email addresses shared in the group.\n"
         "To view the list of emails collected so far, use the command:\n"
-        "`/get_emails`\n"
-        "To rescan recent messages and re-collect emails, use:\n"
-        "`/rescan`",
+        "`/get_emails`\n",
         parse_mode="Markdown"
     )
 
-# ✅ set bot command menu for Telegram interface
+# ✅ set bot command menu for Telegram interface (بدون rescan)
 async def set_bot_commands(application):
     await application.bot.set_my_commands([
         BotCommand("start", "Start using the bot"),
-        BotCommand("get_emails", "Show collected emails"),
-        BotCommand("rescan", "Rescan last 100 messages")
+        BotCommand("get_emails", "Show collected emails")
+        # لا تضف rescan هنا
     ])
 
 # ✅ initialize and run the bot
